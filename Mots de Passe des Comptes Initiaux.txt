@@ -1,0 +1,11 @@
+Mots de Passe des Comptes Initiaux
+Email de Connexion	Rôle	Mot de Passe (en clair)
+admin@sante.sn	admin	secure_admin_pass
+dr.fall@sante.sn	doctor	secure_doctor_pass
+
+
+
+ UPDATE utilisateur
+  SET password_hash = 'scrypt:32768:8:1$GduA3mhbT6AWgKCG$3a1c8cf43ea58019b91edeeb4c17a2c1812d4ec5901823de4564f74655c28ef0c03e23f9026ddfb748cb672da631e974a23f861159f61a8c841b1a296ae776e6',
+      role = 'admin'
+  WHERE email = 'admin@sante.sn';

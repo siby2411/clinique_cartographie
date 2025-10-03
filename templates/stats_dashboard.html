@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Tableau de Bord Épidémiologique</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; }
+        
+        /* STYLE DE LA BANNIÈRE OMEGA */
+        .banner {
+            background-color: #007bff; /* Bleu d'entreprise */
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .container { width: 90%; max-width: 1200px; margin: 20px auto; padding: 20px; background-color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { color: #007bff; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .navbar a { text-decoration: none; color: #333; margin: 0 15px; font-weight: bold; }
+        
+        /* Styles KPI (exemple) */
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background-color: #e9ecef; padding: 20px; border-radius: 5px; text-align: center; }
+        .kpi-value { font-size: 2.5em; font-weight: bold; color: #007bff; }
+        .kpi-label { font-size: 1em; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        OMEGA INFORMATIQUE - Plateforme de Gestion Médicale
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Tableau de Bord Épidémiologique</h1>
+            <p>Analyse agrégée des données de consultation dans la région de Dakar.</p>
+            <div class="navbar">
+                <a href="/admin">Accueil Admin</a> |
+                <a href="/map">Carte Épidémiologique</a>
+            </div>
+        </header>
+
+        <h2>Indicateurs Clés (KPIs)</h2>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-value">{{ stats.total_patients | default(0) }}</div>
+                <div class="kpi-label">Patients Enregistrés</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">{{ stats.total_consultations | default(0) }}</div>
+                <div class="kpi-label">Consultations Totales</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-value">{{ stats.recent_cases_30d | default(0) }}</div>
+                <div class="kpi-label">Cas Récents (30 derniers jours)</div>
+            </div>
+        </div>
+        
+        <h2>Cas par Diagnostic</h2>
+        {% if stats.cases_by_disease %}
+            <ul>
+            {% for diag, count in stats.cases_by_disease.items() %}
+                <li>{{ diag }}: **{{ count }}**</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Aucun cas enregistré pour le moment.</p>
+        {% endif %}
+
+        <h2>Cas par Centre de Santé</h2>
+        {% if stats.cases_by_center %}
+            <ul>
+            {% for center, count in stats.cases_by_center.items() %}
+                <li>{{ center }}: **{{ count }}**</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Aucune donnée de centre disponible.</p>
+        {% endif %}
+
+    </div>
+</body>
+</html>

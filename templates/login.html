@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page de Connexion</title>
+</head>
+<body>
+
+   <form action="{{ url_for('login') }}" method="POST">
+    <h2>Connexion</h2>
+    
+    {{ form.csrf_token }} 
+    
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <div>
+        <label for="email">Adresse E-mail :</label> 
+        <input type="text" id="email" name="email" required>
+    </div>
+    
+    <br>
+
+    <div>
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+
+    <br>
+    
+    <button type="submit">Se Connecter</button>
+</form>
+
+</body>
+</html>

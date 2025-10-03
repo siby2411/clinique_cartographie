@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tableau de Bord Médecin</title>
+</head>
+<body>
+    <h1>Bienvenue, Dr. {{ current_user.email }}</h1>
+    <p>Vous êtes connecté avec le rôle : <strong>{{ current_user.role }}</strong>.</p>
+    
+    <h2>Accès Rapide aux Formulaires</h2>
+    <ul>
+        <li><a href="/admin/patient">Gérer les Patients (Ajouter / Modifier)</a></li>
+        <li><a href="/admin/consultation">Gérer les Consultations (Ajouter / Modifier)</a></li>
+    </ul>
+    
+    <hr>
+    <p><a href="{{ url_for('logout') }}">Se Déconnecter</a></p>
+</body>
+</html>

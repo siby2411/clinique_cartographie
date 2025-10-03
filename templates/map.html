@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Épidémiologique - Santé Dakar Géo</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; background-color: #f4f7f6; }
+        
+        /* STYLE DE LA BANNIÈRE OMEGA */
+        .banner {
+            background-color: #007bff; /* Bleu d'entreprise */
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .container { width: 90%; max-width: 1200px; margin: 20px auto; }
+        #mapid { height: 700px; width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .info-bar { margin-bottom: 20px; text-align: center; padding: 15px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
+        h1 { color: #007bff; font-size: 1.8em; margin: 0 0 10px 0; }
+        .navbar a { text-decoration: none; color: #333; margin: 0 15px; font-weight: bold; }
+
+        /* STYLE DE LA LÉGENDE LEAFLET */
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+        .legend i {
+            width: 10px;
+            height: 10px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.9;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        OMEGA INFORMATIQUE - Plateforme de Gestion Médicale
+    </div>
+    
+    <div class="container">
+        <div class="info-bar">
+            <h1>Carte des Consultations Épidémiologiques 🇸🇳</h1>
+            <div class="navbar">
+                <a href="/admin">Accueil Admin</a> |
+                <a href="/stats">Tableau de Bord Statistique</a>
+            </div>
+        </div>
+
+        <div id="mapid"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // --- COULEURS DES MARQUEURS ---
+        const COLOR_PALUDISME = '#ff8c00'; // Orange
+        const COLOR_CHOLERA = '#8b0000'; // Rouge foncé
+
+        const DAKAR_CENTER = [14.6937, -17.4446]; 
+
+        // 1. Initialisation de la carte
+        const map = L.map('mapid').setView(DAKAR_CENTER, 10);
+
+        // 2. Ajout des tuiles OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 3. Fonction pour charger les données GeoJSON
+        function loadCases() {
+            fetch('/api/cases')
+                .then(response => {
+                    if (!response.ok) {
+                        // Ceci permet de capturer les erreurs 500 si elles reviennent
+                        throw new Error('Erreur réseau lors de la récupération des données GeoJSON. Statut: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    
+                    if (data && data.features && data.features.length > 0) {
+                        
+                        const geoJsonLayer = L.geoJSON(data, {
+                            pointToLayer: function (feature, latlng) {
+                                
+                                const props = feature.properties;
+                                const popupContent = `
+                                    <strong>Diagnostic:</strong> ${props.diagnostic}<br>
+                                    <strong>Patient:</strong> ${props.patient}<br>
+                                    <strong>Date:</strong> ${props.date}
+                                `;
+
+                                // Déterminer la couleur basée sur le diagnostic
+                                let markerColor = props.diagnostic === 'Paludisme' ? COLOR_PALUDISME : COLOR_CHOLERA; 
+                                
+                                // Marqueur circulaire large et visible (résout le problème de superposition)
+                                return L.circleMarker(latlng, {
+                                    radius: 10,
+                                    fillColor: markerColor,
+                                    color: "#000000",
+                                    weight: 2,
+                                    opacity: 1,
+                                    fillOpacity: 0.9
+                                }).bindPopup(popupContent);
+                            }
+                        }).addTo(map);
+
+                        // CRITIQUE : Zoomer sur l'étendue des marqueurs pour les rendre visibles
+                        const bounds = geoJsonLayer.getBounds();
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, { 
+                                padding: [50, 50],
+                                maxZoom: 14 // Zoom maximal pour bien voir les points superposés
+                            });
+                        }
+                    } else {
+                         console.log("La réponse API est vide, aucune donnée à afficher. (0 cas)");
+                         // Enlever l'alerte pour ne pas gêner si l'API est vide par design
+                         // alert("Aucun cas épidémiologique trouvé dans la base de données.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur lors du chargement ou de l\'affichage des données cartographiques:', error);
+                    alert("Erreur critique: Impossible de charger les données cartographiques. Vérifiez la console.");
+                });
+        }
+        
+        // 4. Ajout de la Légende (Position: bas-droite)
+        const legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.innerHTML += '<h4>Cas Épidémiologiques</h4>';
+            
+            // Paludisme
+            div.innerHTML +=
+                '<i style="background:' + COLOR_PALUDISME + '"></i> ' +
+                'Paludisme<br>';
+
+            // Choléra
+            div.innerHTML +=
+                '<i style="background:' + COLOR_CHOLERA + '"></i> ' +
+                'Choléra';
+
+            return div;
+        };
+
+        // Charger les données et la légende
+        loadCases();
+        legend.addTo(map);
+    </script>
+</body>
+</html>

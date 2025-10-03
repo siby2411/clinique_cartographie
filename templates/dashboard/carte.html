@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Carte des Centres de Santé</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+
+    <style>
+        #map { 
+            height: 600px; /* OBLIGATOIRE */
+            width: 100%;
+        }
+        body { 
+            margin: 0; 
+            padding: 0; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div> 
+
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+
+<script>
+    // Initialisation de la carte (Dakar)
+    var map = L.map('map').setView([14.7167, -17.4677], 12); 
+
+    // Ajout du fond de carte OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); 
+
+    // Récupération des données GeoJSON
+    fetch('/api/centres/geojson') 
+        .then(response => {
+            if (!response.ok) {
+                console.error('Erreur API:', response.statusText);
+                throw new Error('Erreur API');
+            }
+            return response.json();
+        })
+        .then(data => {
+            var geoJsonLayer = L.geoJSON(data, { 
+                onEachFeature: function (feature, layer) { 
+                    if (feature.properties && feature.properties.nom) {
+                         layer.bindPopup("Centre: " + feature.properties.nom);
+                    }
+                } 
+            }).addTo(map);
+
+            // Centre la carte sur les données si des points ont été ajoutés
+            if (data.features && data.features.length > 0) {
+                 map.fitBounds(geoJsonLayer.getBounds());
+            }
+            
+            // Pour forcer le rendu si la carte est grise
+            setTimeout(() => { map.invalidateSize(); }, 100);
+
+        })
+        .catch(error => {
+            console.error('Erreur de chargement des données GeoJSON ou JavaScript:', error);
+            document.getElementById('map').innerHTML = '<h2>Erreur : Problème de chargement des données.</h2>';
+        });
+</script>
+
+</body>
+</html>
